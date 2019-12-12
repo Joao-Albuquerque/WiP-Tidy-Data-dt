@@ -1,5 +1,8 @@
 
 
+#### WOMEN IN PARLIAMENT - data.table ####
+
+
 require(data.table)
 require(here)
 require(ggplot2)
@@ -52,4 +55,81 @@ ggplot(aes(Year, pctWiP)) +
   geom_line() + geom_point() +
   scale_y_continuous(limits=c(0,50)) +
   ylab("% Women in Parliament")
+
+
+
+# Portugal versus European Union countries:
+WP[Country %in% c("Portugal", "Sweden", "Spain", "Hungary", "Romania",
+                  "Finland", "Germany", "European Union")] %>%
+  ggplot(aes(Year, pctWiP, colour=Country)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = seq(1990, 2020, 5)) +
+  scale_y_continuous(limits = c(0,50),
+                     breaks = seq(0,50,10)) +
+  ggtitle("Women in Parliament: EU Countries") +
+  ylab("% Women in Parliament")
+
+
+# Countries with the highest percentage of women in parliament:
+WP[order(-pctWiP), head(.SD,10)]
+
+# Highest percentage by year:
+WP[order(Year, -pctWiP), head(.SD, 1), by=Year]
+
+
+# Merging continent: (acrescenta duas novas variaveis: o continente e o codigo do pais)
+# install.packages("countrycode")
+require(countrycode)
+
+c1 <- as.data.table(codelist)[, .(continent, wb)]
+setnames(c1, c("continent", "wb"),
+         c("Continent", "Code"))
+cWP <- c1[WP, on="Code"]
+cWP
+
+
+# Highest percentage by year and continent:
+cWP[Year %in% c(1990,2018) & !is.na(Continent)][
+  order(Year, -pctWiP), head(.SD, 1),
+  by = .(Year,Continent)][
+    order(Continent, Year),
+    .(Continent, Year, Country, pctWiP)
+  ]
+
+
+# Decline in percentage:
+dWP <- cWP[
+  order(Country, Year), .SD[c(1,.N)],
+  by=Country][,
+    pctDiff := pctWiP - shift(pctWiP), by=Country][
+    pctDiff<0][
+    order(pctDiff)]
+
+dWP[!is.na(Continent),
+    .(Country, pctWiP, pctDiff)]
+
+
+# Plot the trend lines for countries with at least a 5% decline:
+
+# Select the countries to plot:
+dclpct <- unique(dWP[!is.na(Continent) &
+                       pctDiff <= -5]$Country)
+
+WP[Country %in% dclpct] %>%
+  ggplot(aes(Year, pctWiP, colour=Country)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks=seq(1990, 2020, 5)) +
+  scale_y_continuous(limits=c(0,40),
+                     breaks=seq(0, 40, 10)) +
+  ggtitle("Women in Parliament: Decline >= 5%") +
+  ylab("% Women in Parliament")
+
+
+
+
+
+
+
 
