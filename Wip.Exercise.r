@@ -128,7 +128,34 @@ WP[Country %in% dclpct] %>%
 
 
 
+cWP[!is.na(Continent),
+    `:=`(RankG = rank(-pctWiP), TotalG = .N),
+    by= .(Year)]
 
+cWP[Country=="Portugal",
+    .(Country, Year, pctWiP, Ratio, RankG, TotalG)][
+      order(Year)
+      ]
+# Continent ranks by year:
+cWP[!is.na(Continent),
+    `:=`(RankC = rank(-pctWiP), TotalC = .N),
+    by = .(Continent, Year)
+    ]
+cWP[Country=="Portugal",
+    .(Country, Year, pctWiP, Ratio, RankC, TotalC)][
+      order(Year)
+    ]
+
+# Plot of Portugal's ranking in Europe:
+cWP[Country %in% c("Portugal", "Sweden", "Spain", "Hungary", "Romania", "Finland", "Germany")] %>%
+  ggplot(aes(Year, RankC, colour=Country)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = seq(1990, 2020, 5)) +
+  scale_y_continuous(limits=c(0,45),
+                     breaks = seq(0, 45, 10)) +
+  ggtitle("Women in Parliament: Ranked") +
+  ylab("Rank in Europe")
 
 
 
